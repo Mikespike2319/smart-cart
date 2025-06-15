@@ -5,8 +5,10 @@ from typing import List, Optional
 import uvicorn
 import logging
 from datetime import datetime
-from api.routers import auth, products, shopping_lists, price_comparison
+from api.routers import auth, products, stores, shopping_lists, price_alerts, analytics
 from api.database import engine, Base
+from api.tasks.price_updater import start_price_updater, stop_price_updater
+import asyncio
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -48,8 +50,10 @@ Base.metadata.create_all(bind=engine)
 # Include routers
 app.include_router(auth.router)
 app.include_router(products.router)
+app.include_router(stores.router)
 app.include_router(shopping_lists.router)
-app.include_router(price_comparison.router)
+app.include_router(price_alerts.router)
+app.include_router(analytics.router)
 
 @app.get("/")
 async def root():
@@ -58,6 +62,16 @@ async def root():
         "version": "1.0.0",
         "docs_url": "/docs"
     }
+
+@app.on_event("startup")
+async def startup_event():
+    """Start background tasks on application startup."""
+    asyncio.create_task(start_price_updater())
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Stop background tasks on application shutdown."""
+    await stop_price_updater()
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True) 
