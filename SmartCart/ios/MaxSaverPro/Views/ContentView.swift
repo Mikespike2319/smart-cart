@@ -1,238 +1,54 @@
 import SwiftUI
-import Combine
 
-// MARK: - Main Content View
 struct ContentView: View {
-    @StateObject private var appState = AppState()
-    @StateObject private var networkManager = NetworkManager.shared
+    @EnvironmentObject var appState: AppState
     
     var body: some View {
         Group {
             if appState.isAuthenticated {
                 MainTabView()
-                    .environmentObject(appState)
             } else {
                 AuthenticationView()
-                    .environmentObject(appState)
             }
         }
-        .onAppear {
-            // Check if user is already logged in
-            checkAuthenticationStatus()
-        }
-    }
-    
-    private func checkAuthenticationStatus() {
-        // TODO: Check for stored authentication token
-        // For now, default to not authenticated
-        appState.isAuthenticated = false
     }
 }
 
-// MARK: - App State Management
-class AppState: ObservableObject {
-    @Published var isAuthenticated = false
-    @Published var currentUser: User?
-    @Published var selectedTab: Tab = .search
-    @Published var isLoading = false
-    @Published var errorMessage: String?
-    
-    enum Tab: CaseIterable {
-        case search, lists, deals, analytics, profile
-        
-        var title: String {
-            switch self {
-            case .search: return "Search"
-            case .lists: return "Lists"
-            case .deals: return "Deals"
-            case .analytics: return "Savings"
-            case .profile: return "Profile"
-            }
-        }
-        
-        var icon: String {
-            switch self {
-            case .search: return "magnifyingglass"
-            case .lists: return "list.bullet"
-            case .deals: return "tag.fill"
-            case .analytics: return "chart.bar.fill"
-            case .profile: return "person.fill"
-            }
-        }
-    }
-    
-    func signIn(email: String, password: String) {
-        isLoading = true
-        errorMessage = nil
-        
-        // TODO: Implement actual authentication
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            self.isLoading = false
-            self.isAuthenticated = true
-            self.currentUser = User(
-                id: 1,
-                email: email,
-                fullName: "Smart Shopper",
-                isActive: true,
-                createdAt: Date()
-            )
-        }
-    }
-    
-    func signOut() {
-        isAuthenticated = false
-        currentUser = nil
-        selectedTab = .search
-    }
-}
-
-// MARK: - Main Tab View
 struct MainTabView: View {
     @EnvironmentObject var appState: AppState
     
     var body: some View {
         TabView(selection: $appState.selectedTab) {
-            ForEach(AppState.Tab.allCases, id: \.self) { tab in
-                tabContent(for: tab)
-                    .tabItem {
-                        Label(tab.title, systemImage: tab.icon)
-                    }
-                    .tag(tab)
-            }
-        }
-        .accentColor(.blue)
-    }
-    
-    @ViewBuilder
-    private func tabContent(for tab: AppState.Tab) -> some View {
-        switch tab {
-        case .search:
+            HomeView()
+                .tabItem {
+                    Label("Home", systemImage: "house.fill")
+                }
+                .tag(AppState.Tab.home)
+            
             SearchView()
-        case .lists:
-            ShoppingListsView()
-        case .deals:
+                .tabItem {
+                    Label("Search", systemImage: "magnifyingglass")
+                }
+                .tag(AppState.Tab.search)
+            
+            ShoppingListView()
+                .tabItem {
+                    Label("List", systemImage: "list.bullet")
+                }
+                .tag(AppState.Tab.shoppingList)
+            
             DealsView()
-        case .analytics:
-            AnalyticsView()
-        case .profile:
+                .tabItem {
+                    Label("Deals", systemImage: "tag.fill")
+                }
+                .tag(AppState.Tab.deals)
+            
             ProfileView()
-        }
-    }
-}
-
-// MARK: - UI Components
-struct ModernTextFieldStyle: TextFieldStyle {
-    func _body(configuration: TextField<Self._Label>) -> some View {
-        configuration
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color(.systemGray4), lineWidth: 1)
-            )
-    }
-}
-
-struct SearchBar: View {
-    @Binding var text: String
-    let placeholder: String
-    
-    init(text: Binding<String>, placeholder: String = "Search...") {
-        self._text = text
-        self.placeholder = placeholder
-    }
-    
-    var body: some View {
-        HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(.gray)
-            
-            TextField(placeholder, text: $text)
-                .textFieldStyle(PlainTextFieldStyle())
-            
-            if !text.isEmpty {
-                Button(action: { text = "" }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.gray)
+                .tabItem {
+                    Label("Profile", systemImage: "person.fill")
                 }
-            }
+                .tag(AppState.Tab.profile)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(Color(.systemGray6))
-        .cornerRadius(10)
-        .padding(.horizontal)
-    }
-}
-
-struct LoadingView: View {
-    var body: some View {
-        VStack(spacing: 20) {
-            ProgressView()
-                .scaleEffect(1.5)
-            
-            Text("Loading...")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-// MARK: - Backend Connection Test
-struct BackendConnectionTestView: View {
-    @StateObject private var networkManager = NetworkManager.shared
-    @State private var connectionStatus = "Not tested"
-    @State private var isConnecting = false
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            Text("Backend Connection Test")
-                .font(.headline)
-            
-            Text("Status: \(connectionStatus)")
-                .font(.subheadline)
-                .foregroundColor(connectionStatus == "Connected ✅" ? .green : 
-                               connectionStatus == "Failed ❌" ? .red : .blue)
-            
-            Button(action: testConnection) {
-                HStack {
-                    if isConnecting {
-                        ProgressView()
-                            .scaleEffect(0.8)
-                    }
-                    Text(isConnecting ? "Testing..." : "Test Connection")
-                }
-                .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(10)
-            }
-            .disabled(isConnecting)
-        }
-        .padding()
-        .background(Color(.systemGray6))
-        .cornerRadius(12)
-    }
-    
-    private func testConnection() {
-        isConnecting = true
-        connectionStatus = "Testing..."
-        
-        networkManager.testConnection()
-            .sink(
-                receiveCompletion: { completion in
-                    isConnecting = false
-                    if case .failure = completion {
-                        connectionStatus = "Failed ❌"
-                    }
-                },
-                receiveValue: { success in
-                    connectionStatus = success ? "Connected ✅" : "Failed ❌"
-                }
-            )
-            .store(in: &networkManager.cancellables)
     }
 }
 
@@ -438,6 +254,30 @@ struct SearchView: View {
             }
             .navigationTitle("Search")
         }
+    }
+}
+
+struct SearchBar: View {
+    @Binding var text: String
+    
+    var body: some View {
+        HStack {
+            Image(systemName: "magnifyingglass")
+                .foregroundColor(.gray)
+            
+            TextField("Search products...", text: $text)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+            
+            if !text.isEmpty {
+                Button(action: {
+                    text = ""
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.gray)
+                }
+            }
+        }
+        .padding()
     }
 }
 

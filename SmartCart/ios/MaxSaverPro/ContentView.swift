@@ -146,8 +146,8 @@ struct SearchResult: Codable, Identifiable {
 class NetworkManager: ObservableObject {
     static let shared = NetworkManager()
     
-    // Update to use the deployed backend URL
-    private let baseURL = "https://api.smartcart.com"  // Update this with your actual deployed backend URL
+    // CHANGE THIS TO YOUR DEPLOYED BACKEND URL
+    private let baseURL = "http://localhost:8000"  // Update when deployed
     
     @Published var isLoading = false
     @Published var errorMessage: String?
@@ -1275,63 +1275,5 @@ struct CameraView: View {
                 presentationMode.wrappedValue.dismiss()
             })
         }
-    }
-}
-
-// MARK: - Connection Test View
-struct ConnectionTestView: View {
-    @StateObject private var networkManager = NetworkManager.shared
-    @State private var testResult: String = "Not tested"
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            Text("Backend Connection Test")
-                .font(.title)
-            
-            Button("Test Connection") {
-                testBackendConnection()
-            }
-            .buttonStyle(.borderedProminent)
-            
-            Text(testResult)
-                .foregroundColor(testResult.contains("success") ? .green : .red)
-            
-            if networkManager.isLoading {
-                ProgressView()
-            }
-        }
-        .padding()
-    }
-    
-    private func testBackendConnection() {
-        networkManager.isLoading = true
-        testResult = "Testing..."
-        
-        guard let url = URL(string: "\(networkManager.baseURL)/health") else {
-            testResult = "Invalid URL"
-            networkManager.isLoading = false
-            return
-        }
-        
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            DispatchQueue.main.async {
-                networkManager.isLoading = false
-                
-                if let error = error {
-                    testResult = "Error: \(error.localizedDescription)"
-                    return
-                }
-                
-                if let httpResponse = response as? HTTPURLResponse {
-                    if httpResponse.statusCode == 200 {
-                        testResult = "Success: Backend is connected!"
-                    } else {
-                        testResult = "Error: Status code \(httpResponse.statusCode)"
-                    }
-                } else {
-                    testResult = "Error: Invalid response"
-                }
-            }
-        }.resume()
     }
 } 

@@ -1,13 +1,57 @@
 import SwiftUI
 
 @main
-struct MaxSaverProApp: App {
+struct SmartCartApp: App {
     @StateObject private var appState = AppState()
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environmentObject(appState)
+            if appState.isAuthenticated {
+                MainTabView()
+                    .environmentObject(appState)
+            } else {
+                AuthenticationView()
+                    .environmentObject(appState)
+            }
+        }
+    }
+}
+
+// MARK: - Main Tab View
+struct MainTabView: View {
+    @EnvironmentObject var appState: AppState
+    
+    var body: some View {
+        TabView(selection: $appState.selectedTab) {
+            SearchView()
+                .tabItem {
+                    Label("Search", systemImage: "magnifyingglass")
+                }
+                .tag(AppState.Tab.search)
+            
+            ShoppingListsView()
+                .tabItem {
+                    Label("Lists", systemImage: "list.bullet")
+                }
+                .tag(AppState.Tab.lists)
+            
+            DealsView()
+                .tabItem {
+                    Label("Deals", systemImage: "tag.fill")
+                }
+                .tag(AppState.Tab.deals)
+            
+            AnalyticsView()
+                .tabItem {
+                    Label("Savings", systemImage: "chart.bar.fill")
+                }
+                .tag(AppState.Tab.analytics)
+            
+            ProfileView()
+                .tabItem {
+                    Label("Profile", systemImage: "person.fill")
+                }
+                .tag(AppState.Tab.profile)
         }
     }
 }
