@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smart-cart-backend
+  namespace: smart-cart
+  labels:
+    app: smart-cart-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: smart-cart-backend
+  template:
+    metadata:
+      labels:
+        app: smart-cart-backend
+    spec:
+      containers:
+      - name: backend
+        image: ${ECR_REGISTRY}/smart-cart:${IMAGE_TAG}
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: smart-cart-config
+              key: DATABASE_URL
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: smart-cart-config
+              key: REDIS_URL
+        - name: WALMART_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: smart-cart-secrets
+              key: WALMART_API_KEY
+        - name: KROGER_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: smart-cart-secrets
+              key: KROGER_CLIENT_ID
+        - name: KROGER_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: smart-cart-secrets
+              key: KROGER_CLIENT_SECRET
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: smart-cart-secrets
+              key: JWT_SECRET
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5 

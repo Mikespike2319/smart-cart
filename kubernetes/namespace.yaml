@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: smart-cart
+  labels:
+    name: smart-cart
+    app: smart-cart 

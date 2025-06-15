@@ -6,56 +6,137 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/maxsaver
+      - DATABASE_URL=postgresql://postgres:smartcart123@db:5432/smartcart
+      - REDIS_URL=redis://redis:6379/0
+      - WALMART_API_KEY=${WALMART_API_KEY}
+      - KROGER_CLIENT_ID=${KROGER_CLIENT_ID}
+      - KROGER_CLIENT_SECRET=${KROGER_CLIENT_SECRET}
+      - JWT_SECRET=your-dev-jwt-secret
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./backend:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - smart-cart-network
+
+  db:
+    image: postgres:14
+    environment:
+      - POSTGRES_DB=smartcart
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=smartcart123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/scripts:/docker-entrypoint-initdb.d
+    networks:
+      - smart-cart-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - smart-cart-network
+
+  ml-trainer:
+    build: ./backend
+    environment:
+      - DATABASE_URL=postgresql://postgres:smartcart123@db:5432/smartcart
       - REDIS_URL=redis://redis:6379/0
     depends_on:
       - db
       - redis
     volumes:
       - ./backend:/app
+      - ./backend/models:/app/models
+    command: >
+      python -c "
+      from api.price_ml import PricePredictionService;
+      from api.database import SessionLocal;
+      import time;
+      print('Starting ML training service...');
+      while True:
+          try:
+              db = SessionLocal();
+              service = PricePredictionService(db);
+              print('Training models...');
+              time.sleep(3600);
+          except Exception as e:
+              print(f'Error: {e}');
+              time.sleep(60);
+      "
     networks:
-      - maxsaver-network
+      - smart-cart-network
 
-  db:
-    image: postgres:14
+  scraper:
+    build: ./backend
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=maxsaver
-    ports:
-      - "5432:5432"
+      - DATABASE_URL=postgresql://postgres:smartcart123@db:5432/smartcart
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./backend:/app
+    command: >
+      python -c "
+      from api.services.scraper import ScrapingService;
+      from api.database import SessionLocal;
+      import asyncio, time;
+      print('Starting scraping service...');
+      while True:
+          try:
+              db = SessionLocal();
+              service = ScrapingService(db);
+              asyncio.run(service.update_all_products());
+              time.sleep(1800);
+          except Exception as e:
+              print(f'Error: {e}');
+              time.sleep(300);
+      "
     networks:
-      - maxsaver-network
+      - smart-cart-network
 
-  redis:
-    image: redis:7
+  prometheus:
+    image: prom/prometheus:latest
     ports:
-      - "6379:6379"
+      - "9090:9090"
     volumes:
-      - redis_data:/data
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
     networks:
-      - maxsaver-network
+      - smart-cart-network
 
-  elasticsearch:
-    image: elasticsearch:8.11.1
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
     environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ports:
-      - "9200:9200"
+      - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
     networks:
-      - maxsaver-network
+      - smart-cart-network
 
 volumes:
   postgres_data:
   redis_data:
-  elasticsearch_data:
+  prometheus_data:
+  grafana_data:
 
 networks:
-  maxsaver-network:
+  smart-cart-network:
     driver: bridge 

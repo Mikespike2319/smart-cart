@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: smart-cart-backend-service
+  namespace: smart-cart
+  labels:
+    app: smart-cart-backend
+spec:
+  selector:
+    app: smart-cart-backend
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: ClusterIP 

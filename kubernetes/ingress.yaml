@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: smart-cart-ingress
+  namespace: smart-cart
+  annotations:
+    kubernetes.io/ingress.class: "alb"
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:123456789012:certificate/your-cert-arn
+    alb.ingress.kubernetes.io/cors.allow-origin: "*"
+    alb.ingress.kubernetes.io/cors.allow-methods: "GET,POST,PUT,DELETE,OPTIONS"
+    alb.ingress.kubernetes.io/cors.allow-headers: "Content-Type,Authorization"
+spec:
+  rules:
+  - host: api.smartcart.app
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: smart-cart-backend-service
+            port:
+              number: 80 

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smart-cart-config
+  namespace: smart-cart
+data:
+  DATABASE_URL: "postgresql://postgres:smartcart123@smart-cart-postgres:5432/smartcart"
+  REDIS_URL: "redis://smart-cart-redis:6379/0"
+  LOG_LEVEL: "INFO"
+  ENVIRONMENT: "production" 

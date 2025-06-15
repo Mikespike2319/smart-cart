@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smart-cart-redis
+  namespace: smart-cart
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smart-cart-redis
+  template:
+    metadata:
+      labels:
+        app: smart-cart-redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: smart-cart-redis
+  namespace: smart-cart
+spec:
+  selector:
+    app: smart-cart-redis
+  ports:
+    - port: 6379
+      targetPort: 6379 
