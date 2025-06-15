@@ -35,16 +35,6 @@
 			path = SmartCart;
 			sourceTree = "<group>";
 		};
-		790993A22DFF7D9100B24FD0 /* SmartCartTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SmartCartTests;
-			sourceTree = "<group>";
-		};
-		790993AC2DFF7D9100B24FD0 /* SmartCartUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SmartCartUITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,8 +66,6 @@
 			isa = PBXGroup;
 			children = (
 				790993942DFF7D8F00B24FD0 /* SmartCart */,
-				790993A22DFF7D9100B24FD0 /* SmartCartTests */,
-				790993AC2DFF7D9100B24FD0 /* SmartCartUITests */,
 				790993932DFF7D8F00B24FD0 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -130,9 +118,6 @@
 			dependencies = (
 				790993A12DFF7D9100B24FD0 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				790993A22DFF7D9100B24FD0 /* SmartCartTests */,
-			);
 			name = SmartCartTests;
 			packageProductDependencies = (
 			);
@@ -152,9 +137,6 @@
 			);
 			dependencies = (
 				790993AB2DFF7D9100B24FD0 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				790993AC2DFF7D9100B24FD0 /* SmartCartUITests */,
 			);
 			name = SmartCartUITests;
 			packageProductDependencies = (
